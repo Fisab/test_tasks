@@ -1,5 +1,4 @@
 import numpy as np
-import requests
 import json
 from io import BytesIO
 from zipfile import ZipFile
@@ -7,6 +6,7 @@ from zipfile import ZipFile
 import pandas as pd
 import cache
 import argparse
+import httpx
 
 
 def mul_bool(array: np.array) -> np.array:
@@ -37,7 +37,7 @@ def str2bool(v: str) -> bool:
 		raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def get_data(url: str, to_json=True, decode=True, make_cache=True) -> list:
+async def get_data(url: str, to_json=True, decode=True, make_cache=True) -> list:
 	"""
 	:param decode: decode
 	:param to_json: convert string to dict (json object)
@@ -45,10 +45,12 @@ def get_data(url: str, to_json=True, decode=True, make_cache=True) -> list:
 	:return: list of dicts (json object)
 	"""
 	try:
-		resp = requests.get(url).content
-	except requests.exceptions.RequestException as e:
-		raise SystemExit(e)
-	zipfile = ZipFile(BytesIO(resp))
+		client = httpx.AsyncClient()
+		resp = await client.get(url)
+	except Exception as e:
+		raise SystemError(e)
+
+	zipfile = ZipFile(BytesIO(resp.content))
 
 	zip_files = zipfile.namelist()
 	assert len(zip_files) == 1

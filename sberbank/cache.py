@@ -9,7 +9,6 @@ def make_cache(cache_name: str, cache_data):
 	"""
 	:param cache_name: name for caching variable
 	:param cache_data: data for caching
-	:param path: where store cache?
 	:return:
 	"""
 	if os.path.exists(CACHE_PATH) is True:

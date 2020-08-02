@@ -2,6 +2,7 @@ import helpers
 import data_mart
 import pandas as pd
 import argparse
+import asyncio
 
 
 def calc_quality_life(address: str, regions: pd.DataFrame, dm_df: pd.DataFrame):
@@ -32,7 +33,10 @@ def calc_quality_life(address: str, regions: pd.DataFrame, dm_df: pd.DataFrame):
 def main(address, via_cache):
 	dm = data_mart.DataMart(via_cache=via_cache)
 	print('Preparing data mart...')
-	dm.prepare_data_mart()
+
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(dm.prepare_data_mart())
+	loop.close()
 
 	regions = dm.regions
 	calc_quality_life(
