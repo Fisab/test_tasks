@@ -83,7 +83,7 @@ class DataMart:
 		self.regions['District'] = self.regions.District.apply(lambda x: x.strip())
 		return self.regions
 
-	async def _prepare_child_clinic(self):
+	async def prepare_child_clinic(self):
 		clinic_ch = await self._retrieve_data('childens_clinic')
 		df_clinic_ch = pd.DataFrame(clinic_ch)
 		df_clinic_ch['District'] = df_clinic_ch.ObjectAddress.apply(lambda x: x[0]['District'] if len(x) != 0 else None)
@@ -93,7 +93,7 @@ class DataMart:
 			.reset_index() \
 			.rename({'ShortName': 'ChildClinicCount'}, axis=1)
 
-	async def _prepare_education(self):
+	async def prepare_education(self):
 		educ = await self._retrieve_data('education')
 		df_educ = pd.DataFrame(educ)
 		educ_buf = df_educ[['FullName', 'InstitutionsAddresses']].copy()
@@ -108,14 +108,14 @@ class DataMart:
 			.reset_index() \
 			.rename({'FullName': 'educCount'}, axis=1)
 
-	async def _prepare_social_food(self):
+	async def prepare_social_food(self):
 		food = await self._retrieve_data('social_food')
 		df_food = pd.DataFrame(food)
 		self.df_food_count = df_food[['Name', 'District']].groupby('District').count() \
 			.reset_index() \
 			.rename({'Name': 'FoodCount'}, axis=1)
 
-	async def _prepare_rescue(self):
+	async def prepare_rescue(self):
 		rescue = await self._retrieve_data('rescue_garrison')
 		df_rescue = pd.read_excel(BytesIO(rescue))
 		df_rescue['AdmArea'] = df_rescue.AdmArea.apply(lambda x: x.strip())
@@ -166,15 +166,15 @@ class DataMart:
 		self.adm_distr_rescue[
 			'CallsDistrict'] = self.adm_distr_rescue.Calls.values / self.adm_distr_rescue.DistrictsCount.values
 
-	async def _prepare_swimming_pools(self):
+	async def prepare_swimming_pools(self):
 		swim_p = await self._retrieve_data('swimming_pool')
 		self.df_swim_p = pd.DataFrame(swim_p)
 
-	async def _prepare_emergency(self):
+	async def prepare_emergency(self):
 		emergency = await self._retrieve_data('emergency_services')
 		self.df_emergency = pd.read_excel(BytesIO(emergency))
 
-	async def _merge_data(self):
+	async def merge_data(self):
 		"""
 		Merge all dataframes to one
 		:return:
@@ -185,6 +185,7 @@ class DataMart:
 		df = pd.DataFrame(
 			self.regions.District.unique()
 		).rename({0: 'District'}, axis=1)
+
 		self.df = df.set_index('District').join(
 			self.df_clinic_ch_count.set_index('District'),
 			how='left'
@@ -218,22 +219,6 @@ class DataMart:
 		self.df['qualityLifeA_Emergency'] = (self.df['emergencyCount'].values + self.df['SwimCount'].values + self.df[
 			'ChildClinicCount'].values + self.df['educCount'].values + self.df[
 			'FoodCount'].values) / self.df['CallsDistrict'].values
-
-	async def prepare_data_mart(self):
-		"""
-		Run all function to retrieve data and then run func to merge it
-		:return:
-		"""
-		# load and prepare all data
-		await self._prepare_child_clinic()
-		await self._prepare_education()
-		await self._prepare_social_food()
-		await self._prepare_rescue()
-		await self._prepare_swimming_pools()
-		await self._prepare_emergency()
-
-		# then create data mart
-		await self._merge_data()
 
 	def get_data_mart(self) -> pd.DataFrame:
 		"""

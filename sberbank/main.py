@@ -35,7 +35,19 @@ def main(address, via_cache):
 	print('Preparing data mart...')
 
 	loop = asyncio.get_event_loop()
-	loop.run_until_complete(dm.prepare_data_mart())
+
+	prepare_data_group = asyncio.gather(
+		dm.prepare_child_clinic(),
+		dm.prepare_education(),
+		dm.prepare_social_food(),
+		dm.prepare_rescue(),
+		dm.prepare_swimming_pools(),
+		dm.prepare_emergency()
+	)
+
+	loop.run_until_complete(prepare_data_group)
+	loop.run_until_complete(dm.merge_data())
+
 	loop.close()
 
 	regions = dm.regions
